@@ -45,6 +45,24 @@ class Octree {
 
 	}
 
+	addNonIndexedGeometry ( geometry ) {
+
+		const positions = geometry.attributes.position.array;
+
+		for ( let i = 0; i < positions.length; i += 9 ) {
+
+			const v1 = new Vector3( positions[ i ], positions[ i + 1 ], positions[ i + 2 ] );
+			const v2 = new Vector3( positions[ i + 3 ], positions[ i + 4 ], positions[ i + 5 ] );
+			const v3 = new Vector3( positions[ i + 6 ], positions[ i + 7 ], positions[ i + 8 ] );
+
+			this.addTriangle( new Triangle( v1, v2, v3 ) );
+
+		}
+
+		return this;
+
+	}
+
 	calcBox() {
 
 		this.box = this.bounds.clone();
@@ -413,41 +431,13 @@ class Octree {
 				obj.updateMatrix();
 				obj.updateWorldMatrix();
 
-				let geometry, isTemp = false;
+				const geometry = obj.geometry.index ? obj.geometry.toNonIndexed() : obj.geometry.clone();
 
-				if ( obj.geometry.index ) {
+				geometry.applyMatrix4(obj.matrixWorld);
 
-					isTemp = true;
-					geometry = obj.geometry.clone().toNonIndexed();
+				this.addNonIndexedGeometry( geometry );
 
-				} else {
-
-					geometry = obj.geometry;
-
-				}
-
-				const positions = geometry.attributes.position.array;
-				const transform = obj.matrixWorld;
-
-				for ( let i = 0; i < positions.length; i += 9 ) {
-
-					const v1 = new Vector3( positions[ i ], positions[ i + 1 ], positions[ i + 2 ] );
-					const v2 = new Vector3( positions[ i + 3 ], positions[ i + 4 ], positions[ i + 5 ] );
-					const v3 = new Vector3( positions[ i + 6 ], positions[ i + 7 ], positions[ i + 8 ] );
-
-					v1.applyMatrix4( transform );
-					v2.applyMatrix4( transform );
-					v3.applyMatrix4( transform );
-
-					this.addTriangle( new Triangle( v1, v2, v3 ) );
-
-				}
-
-				if ( isTemp ) {
-
-					geometry.dispose();
-
-				}
+				geometry.dispose();
 
 			}
 
